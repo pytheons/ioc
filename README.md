@@ -8,7 +8,6 @@ Status: Work In Progress
 
 Create `services.yml` file, the file will contains different service definiton such as
 
-.. code-block:: yaml
 
     parameters:
         foo.bar: argument 1
@@ -34,8 +33,6 @@ Create `services.yml` file, the file will contains different service definiton s
 
 
 Then to use and access a service just do
-
-.. code-block:: python
 
     import ioc
 
