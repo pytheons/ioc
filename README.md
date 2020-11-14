@@ -6,7 +6,7 @@ Status: Work In Progress
 
 ## Usage
 
-Create a file `services.yml` file, the file will contains different service definiton such as
+Create `services.yml` file, the file will contains different service definiton such as
 
 .. code-block:: yaml
 
