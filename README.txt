@@ -1,15 +1,12 @@
-============================================
-Python Simple Dependency Injection Container
-============================================
+# Python Simple Dependency Injection Container
 
-This project is a simple port of the Symfony2 DependencyInjection lib available at https://github.com/symfony/DependencyInjection
+This project is a simple port of the Symfony DependencyInjection lib available at https://github.com/symfony/dependency-injection
 
 Status: Work In Progress
 
-Usage
------
+## Usage
 
-- Create a services.yml file, the file will contains different service definiton such as
+Create a file `services.yml` file, the file will contains different service definiton such as
 
 .. code-block:: yaml
 
