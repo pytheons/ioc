@@ -50,16 +50,16 @@ class MyHTTPTest(AsyncHTTPTestCase):
 
     def test_not_found(self):
         response = self.fetch('/')
-        self.assertEquals("Not Found", response.body)
-        self.assertEquals(404, response.code)
+        self.assertEqual("Not Found", response.body)
+        self.assertEqual(404, response.code)
 
     def test_found(self):
         response = self.fetch('/hello/Thomas')
-        self.assertEquals("Hello Thomas", response.body)
-        self.assertEquals(200, response.code)
+        self.assertEqual("Hello Thomas", response.body)
+        self.assertEqual(200, response.code)
 
     def test_error(self):
         response = self.fetch('/exception')
 
-        self.assertEquals("An unexpected error occurred", response.body[0:28])
-        self.assertEquals(500, response.code)
+        self.assertEqual("An unexpected error occurred", response.body[0:28])
+        self.assertEqual(500, response.code)

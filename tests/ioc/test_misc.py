@@ -28,4 +28,4 @@ class MiscTest(unittest.TestCase):
 
         data = yaml.load(open("%s/../fixtures/order_list.yml" % current_dir).read(), OrderedDictYAMLLoader)
 
-        self.assertEquals(data['list']['true'], 'OK')
+        self.assertEqual(data['list']['true'], 'OK')

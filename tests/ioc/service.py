@@ -12,6 +12,10 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import os
+
+from docutils.parsers.rst.directives import value_or
+
 
 class Fake(object):
     def __init__(self, mandatory, param=None):
@@ -24,6 +28,7 @@ class Fake(object):
         self.arg2 = arg2
         self.ok = ok
 
+
 class Foo(object):
     def __init__(self, fake, weak_reference):
         self.fake = fake
@@ -32,3 +37,19 @@ class Foo(object):
 
 class WeakReference(object):
     pass
+
+
+class EnvironmentVariables(object):
+    @staticmethod
+    def clear(name: str):
+        if name in os.environ:
+            del os.environ[name]
+
+    @staticmethod
+    def set(name: str, value):
+        EnvironmentVariables.clear(name)
+        os.environ[name] = value
+
+    @staticmethod
+    def get(name: str):
+        return os.getenv(name)

@@ -12,11 +12,15 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import json
+import os
+from json import JSONDecodeError
 
 import ioc.exceptions, ioc.helper
 from ioc.proxy import Proxy
 
 import importlib, inspect, re
+
 
 class Extension(object):
     def load(self, config, container_builder):
@@ -34,18 +38,21 @@ class Extension(object):
     def start(self, container):
         pass
 
+
 class Reference(object):
     def __init__(self, id, method=None):
         self.id = id
         self.method = method
 
+
 class WeakReference(Reference):
     pass
+
 
 class Definition(object):
     def __init__(self, clazz=None, arguments=None, kwargs=None, abstract=False):
         self.clazz = clazz
-        self.arguments = arguments or [] 
+        self.arguments = arguments or []
         self.kwargs = kwargs or {}
         self.method_calls = []
         self.property_calls = []
@@ -73,6 +80,7 @@ class Definition(object):
             return []
 
         return self.tags[name]
+
 
 class ParameterHolder(object):
     def __init__(self, parameters=None):
@@ -106,14 +114,82 @@ class ParameterHolder(object):
     def is_frozen(self):
         return self._frozen == True
 
+
+class EnvironmentVariableProcessor(object):
+    def __init__(self, logger=None):
+        self.logger = logger
+        self.enveloped_prefix = 'env('
+        self.enveloped_suffix = ')'
+
+    def is_env(self, value) -> bool:
+        return isinstance(value, str) and value[:4] == self.enveloped_prefix and value[-1] == self.enveloped_suffix
+
+    def parse(self, value):
+        expression = str(value).strip(self.enveloped_prefix).strip(self.enveloped_suffix)
+        values = expression.split(':')
+        if len(values) > 1:
+            return values[0], ''.join(values[1:])
+
+        return '', expression
+
+    def get_env(self, prefix: str, name: str):
+        value = os.getenv(name)
+        if prefix in self.get_provided_types().keys():
+            cast = self.get_provided_types().get(prefix, str)
+            parser_name = f'_{prefix}'
+            if hasattr(self, parser_name):
+                function = getattr(self, parser_name)
+                return function(value)
+
+            return cast(value)
+
+        return value
+
+    @staticmethod
+    def _trim(value):
+        return str(value).strip()
+
+    def _json(self, value):
+        try:
+            return json.loads(value)
+        except JSONDecodeError:
+            self.logger.error('Invalid JSON value: {value}'.format(value=value))
+            return ''
+
+    @staticmethod
+    def get_provided_types() -> dict:
+        return {
+            'base64': str,
+            'str': str,
+            'string': str,
+            'bool': bool,
+            'boolean': bool,
+            'int': int,
+            'integer': int,
+            'float': float,
+            'file': str,
+            'json': dict,
+            'resolve': str,
+            'trim': str,
+            # 'const': 'bool|int|float|str|tuple',
+            # 'csv': 'list|tuple',
+            # 'key': 'bool|int|float|str|tuple',
+            # 'url': 'dict|list|tuple|set',
+            # 'query_string': 'dict|list|tuple|set',
+            # 'default': 'bool|int|float|str|tuple|list|set|dict',
+            # 'require': 'bool|int|float|str|tuple|list|set|dict'
+        }
+
+
 class ParameterResolver(object):
     def __init__(self, logger=None):
         self.re = re.compile("%%|%([^%\s]+)%")
         self.logger = logger
         self.stack = []
+        self.env_var_processor = EnvironmentVariableProcessor(logger=self.logger)
 
     def _resolve(self, parameter, parameter_holder):
-        if isinstance(parameter, (tuple)):
+        if isinstance(parameter, tuple):
             parameter = list(parameter)
             for key in ioc.helper.get_keys(parameter):
                 parameter[key] = self.resolve(parameter[key], parameter_holder)
@@ -135,11 +211,15 @@ class ParameterResolver(object):
 
             return self.resolve(parameter_holder.get(parameter[1:-1]), parameter_holder)
 
-        def replace(matchobj):
-            if matchobj.group(0) == '%%':
+        if parameter[0:1] == '%' and parameter[-1] == '%' and self.env_var_processor.is_env(parameter[1:-1]):
+            prefix, env_name = self.env_var_processor.parse(parameter[1:-1])
+            return self.resolve(self.env_var_processor.get_env(prefix, env_name), parameter_holder)
+
+        def replace(match_object):
+            if match_object.group(0) == '%%':
                 return '%'
 
-            return self.resolve(parameter_holder.get(matchobj.group(1)), parameter_holder)
+            return self.resolve(parameter_holder.get(match_object.group(1)), parameter_holder)
 
         # if self.logger:
         #     self.logger.debug("   >> Start resolving parameter: %s" % parameter)
@@ -161,6 +241,7 @@ class ParameterResolver(object):
 
         return value
 
+
 class Container(object):
     def __init__(self):
         self.services = {}
@@ -178,6 +259,7 @@ class Container(object):
             raise ioc.exceptions.UnknownService(id)
 
         return self.services[id]
+
 
 class ContainerBuilder(Container):
     def __init__(self, logger=None):
@@ -207,7 +289,6 @@ class ContainerBuilder(Container):
                 container.add("logger", logging.getLogger('app'))
             else:
                 container.add("logger", self.logger)
-
 
         self.parameters.set('ioc.extensions', self.extensions.keys())
 
@@ -244,7 +325,7 @@ class ContainerBuilder(Container):
 
         for name, value in self.parameters.all().items():
             container.parameters.set(
-                name, 
+                name,
                 self.parameter_resolver.resolve(value, self.parameters)
             )
 
@@ -266,7 +347,7 @@ class ContainerBuilder(Container):
         abstract = self.services[id]
 
         definition = Definition(
-            clazz=abstract.clazz, 
+            clazz=abstract.clazz,
             arguments=ioc.helper.deepcopy(abstract.arguments),
             kwargs=ioc.helper.deepcopy(abstract.kwargs),
             abstract=False,
@@ -327,7 +408,7 @@ class ContainerBuilder(Container):
                 setattr(instance, method, self.set_services(args, container)[0])
             else:
                 attr(*self.set_services(args, container), **self.set_services(kwargs, container))
-            
+
         if self.logger:
             self.logger.debug("End creating instance %s" % instance)
 
@@ -335,7 +416,8 @@ class ContainerBuilder(Container):
 
     def get_service(self, id, definition, container):
         if definition.abstract:
-            raise ioc.exceptions.AbstractDefinitionInitialization("The ContainerBuiler try to build an abstract definition, id=%s, class=%s" % (id, definition.clazz))
+            raise ioc.exceptions.AbstractDefinitionInitialization(
+                "The ContainerBuiler try to build an abstract definition, id=%s, class=%s" % (id, definition.clazz))
 
         if container.has(id):
             return container.get(id)

@@ -30,19 +30,19 @@ class RouterTest(unittest.TestCase):
     def test_add_and_match_routes(self):
         self.router.add("homepage", "/", view)
 
-        self.assertEquals(('homepage', {}, view), self.router.match("/"))
+        self.assertEqual(('homepage', {}, view), self.router.match("/"))
 
         self.router.add("blog_post", "/blog/<string:slug>", view, methods=['GET'])
 
-        self.assertEquals(('blog_post', {'slug': 'hello'}, view), self.router.match("/blog/hello"))
+        self.assertEqual(('blog_post', {'slug': 'hello'}, view), self.router.match("/blog/hello"))
 
     def test_add_and_generate_routes(self):
 
         self.router.add("homepage", "/", view)
         self.router.add("blog_post", "/blog/<string:slug>", view)
 
-        self.assertEquals("/", self.router.generate("homepage"))
-        self.assertEquals("/?panel=user", self.router.generate("homepage", panel="user"))
-        self.assertEquals("/blog/hello", self.router.generate("blog_post", slug="hello"))
+        self.assertEqual("/", self.router.generate("homepage"))
+        self.assertEqual("/?panel=user", self.router.generate("homepage", panel="user"))
+        self.assertEqual("/blog/hello", self.router.generate("blog_post", slug="hello"))
 
-        self.assertEquals("http://localhost/blog/hello", self.router.generate("blog_post", slug="hello", force_external=True))
+        self.assertEqual("http://localhost/blog/hello", self.router.generate("blog_post", slug="hello", force_external=True))

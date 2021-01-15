@@ -6,3 +6,5 @@ ioc.egg-info
 docs/_build/
 .coverage
 cover
+venv/
+.idea/

@@ -2,6 +2,7 @@ parameters:
     foo.bar: argument 1
     foo.foo: "the %foo.bar%"
     foo.class: "tests.ioc.service.Foo"
+    foo.env: '%env(ENVIRONMENT)%'
 
 services:
     fake:

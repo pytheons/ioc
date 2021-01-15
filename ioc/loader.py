@@ -19,6 +19,7 @@ from ioc.component import Definition, Reference, WeakReference
 import ioc.helper, ioc.exceptions
 from .misc import OrderedDictYAMLLoader
 
+
 class Loader(object):
     def fix_config(self, config):
         for key, value in config.items():
@@ -27,9 +28,10 @@ class Loader(object):
 
         return ioc.helper.Dict(config)
 
+
 class YamlLoader(Loader):
     def support(self, file):
-        return file[-3:] == 'yml'
+        return file[-3:] == 'yml' or file[-4:] == 'yaml'
 
     def load(self, file, container_builder):
 
@@ -42,7 +44,7 @@ class YamlLoader(Loader):
             if extension in ['parameters', 'services']:
                 continue
 
-            if config == None:
+            if config is None:
                 config = {}
 
             container_builder.add_extension(extension, self.fix_config(config.copy()))
@@ -73,8 +75,8 @@ class YamlLoader(Loader):
                     meta['abstract'] = False
 
                 definition = Definition(
-                    clazz=meta['class'], 
-                    arguments=self.set_references(meta['arguments']), 
+                    clazz=meta['class'],
+                    arguments=self.set_references(meta['arguments']),
                     kwargs=self.set_references(meta['kwargs']),
                     abstract=meta['abstract']
                 )
